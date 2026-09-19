@@ -19,6 +19,7 @@ CREATE TABLE transactions (
   amount          NUMERIC(15,2) NOT NULL CHECK (amount > 0),
   status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',
   trace_id        VARCHAR(64),
+  recommendation  TEXT,
   created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

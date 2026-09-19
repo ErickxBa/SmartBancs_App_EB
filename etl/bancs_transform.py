@@ -1,6 +1,8 @@
 import pandas as pd
 import logging
 from pathlib import Path
+import os
+from sqlalchemy import create_engine
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("ETL-Bancs")
@@ -29,12 +31,25 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
     logger.info(f"Transformación completada. Registros válidos: {len(df)} (Descartados: {initial_count - len(df)})")
     return df
 
-def load(df: pd.DataFrame, output_path: str):
-    df.to_json(output_path, orient="records", date_format="iso", indent=2)
-    logger.info(f"Datos limpios guardados en: {output_path}")
+def load(df: pd.DataFrame):
+    # En un entorno real se lee desde el .env
+    db_url = os.getenv("DATABASE_URL", "postgresql://app_user:app_password@localhost:5432/smartbancs")
+    logger.info(f"Conectando a la base de datos de Data Warehouse...")
+    
+    engine = create_engine(db_url)
+    
+    # Renombrar columnas para coincidir con la DB si fuera necesario
+    # Por ahora asumiendo que insertaremos en una tabla analítica 'bancs_raw_transactions'
+    table_name = "bancs_raw_transactions"
+    
+    try:
+        df.to_sql(table_name, engine, if_exists="append", index=False)
+        logger.info(f"Datos limpios guardados exitosamente en PostgreSQL (tabla '{table_name}').")
+    except Exception as e:
+        logger.error(f"Error al cargar en PostgreSQL: {e}")
 
 if __name__ == "__main__":
     current_dir = Path(__file__).parent
     raw_df = extract(current_dir / "bancs_raw_data.json")
     clean_df = transform(raw_df)
-    load(clean_df, current_dir / "bancs_clean_data.json")
+    load(clean_df)

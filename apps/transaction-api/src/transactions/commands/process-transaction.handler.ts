@@ -5,6 +5,10 @@ import { DataSource } from 'typeorm';
 import { Account } from '../../accounts/entities/account.entity';
 import { Transaction } from '../entities/transaction.entity';
 import { TransactionCompletedEvent } from '../events/transaction-completed.event';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { Counter, Histogram } from 'prom-client';
+import { RedisService } from '@liaoliaots/nestjs-redis';
+import Redis from 'ioredis';
 
 @Injectable()
 @CommandHandler(ProcessTransactionCommand)
@@ -14,13 +18,19 @@ export class ProcessTransactionHandler implements ICommandHandler<ProcessTransac
     constructor(
         private readonly dataSource: DataSource,
         private readonly eventBus: EventBus,
+        @InjectMetric('smartbancs_transactions_total') private readonly counter: Counter<string>,
+        @InjectMetric('smartbancs_transaction_duration_seconds') private readonly histogram: Histogram<string>,
+        private readonly redisService: RedisService,
     ) {}
 
     async execute(command: ProcessTransactionCommand): Promise<any> {
+        const endTimer = this.histogram.startTimer();
         const { accountFrom, accountTo, amount, traceId } = command.payload;
 
         if (accountFrom === accountTo) {
-            throw new BadRequestException('Cannot transfer to the same account');
+            this.counter.inc({ status: 'bad_request' });
+            endTimer();
+            throw new BadRequestException('Las cuentas origen y destino deben ser distintas');
         }
 
         const queryRunner = this.dataSource.createQueryRunner();
@@ -73,6 +83,17 @@ export class ProcessTransactionHandler implements ICommandHandler<ProcessTransac
 
             await queryRunner.commitTransaction();
 
+            // Redis write-through (saldo en caché)
+            try {
+                const redisClient = this.redisService.getOrThrow();
+                await Promise.all([
+                    redisClient.decrby(`balance:${accountFrom}`, Math.round(amount * 100)),
+                    redisClient.incrby(`balance:${accountTo}`, Math.round(amount * 100)),
+                ]);
+            } catch (redisErr) {
+                this.logger.error(`Failed to update Redis cache: ${redisErr.message}`, redisErr.stack);
+            }
+
             // Despachar evento asíncrono hacia el AI Worker (Fase 3)
             this.eventBus.publish(new TransactionCompletedEvent(
                 transaction.id, 
@@ -81,12 +102,24 @@ export class ProcessTransactionHandler implements ICommandHandler<ProcessTransac
                 traceId
             ));
 
-            this.logger.log(`transaction.completed trace=${traceId} tx=${transaction.id}`);
+            const result = {
+                id: transaction.id,
+                status: 'COMPLETED',
+                traceId: traceId,
+            };
 
-            return transaction;
-        } catch (err) {
+            this.counter.inc({ status: 'success' });
+            endTimer();
+            return result;
+        } catch (error) {
             await queryRunner.rollbackTransaction();
-            throw err;
+            this.logger.error(`Error procesando transacción [Trace: ${traceId}]: ${error.message}`);
+            this.counter.inc({ status: 'error' });
+            endTimer();
+            if (error instanceof BadRequestException) {
+                throw error;
+            }
+            throw new BadRequestException('Error interno al procesar la transacción');
         } finally {
             await queryRunner.release();
         }

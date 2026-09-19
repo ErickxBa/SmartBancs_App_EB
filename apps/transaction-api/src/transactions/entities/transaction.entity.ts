@@ -20,5 +20,8 @@ export class Transaction {
     @Column({ name: 'trace_id', nullable: true })
     traceId: string;
 
+    @Column({ type: 'text', nullable: true })
+    recommendation: string;
+
     @CreateDateColumn({ name: 'created_at' }) createdAt: Date;
 }

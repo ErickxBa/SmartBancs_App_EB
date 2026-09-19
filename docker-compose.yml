@@ -45,6 +45,78 @@ services:
     networks:
       - smartbancs_net
 
+  # 4. API Transaccional (NestJS)
+  transaction-api:
+    build:
+      context: ./apps/transaction-api
+      dockerfile: Dockerfile
+    container_name: smartbancs_api
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    networks:
+      - smartbancs_net
+
+  # 5. AI Worker (Microservicio Python)
+  ai-worker:
+    build: ./services/ai-worker
+    container_name: smartbancs_ai_worker
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks:
+      - smartbancs_net
+
+  sync-worker:
+    build: ./services/sync-worker
+    container_name: smartbancs_sync_worker
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smartbancs_net
+
+  # 6. Observabilidad: Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: smartbancs_prometheus
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - smartbancs_net
+
+  # 7. Observabilidad: Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: smartbancs_grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    networks:
+      - smartbancs_net
+
 networks:
   smartbancs_net:
     driver: bridge

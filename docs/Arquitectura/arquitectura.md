@@ -69,6 +69,10 @@ El código base sigue una estructura modular para separar claramente las respons
 
 ```text
 smartbancs-nestjs/
+├── README.md                      
+├── docker-compose.yml             
+├── .env.example                   # Añade aquí tus variables GEMINI_API_KEY y DB_URL
+├── AI_USAGE.md
 ├── apps/
 │   └── transaction-api/           # Microservicio principal NestJS (Fastify)
 │       ├── src/
@@ -76,11 +80,14 @@ smartbancs-nestjs/
 │       │   ├── accounts/          # Dominio de cuentas de usuario
 │       │   ├── messaging/         # Publicador de eventos hacia RabbitMQ
 │       │   └── observability/     # Configuración de logs y métricas
+│       ├── Dockerfile
 ├── services/
 │   └── ai-worker/                 # Worker Python para IA (consume RabbitMQ)
 │       ├── worker.py
+│       ├── Dockerfile
 │       └── ai_client.py
 ├── etl/
+│   ├── bancs_raw_data.json        # DATOS SUCIOS: Tu archivo con nulos y errores
 │   └── bancs_transform.py         # Script ETL (Python/Pandas) para lectura de Bancs
 ├── db/
 │   ├── schema.sql                 # Esquema de base de datos

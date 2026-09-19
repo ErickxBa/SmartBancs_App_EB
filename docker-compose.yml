@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  # 1. Motor de Persistencia Relacional (Transaccional)
+  postgres:
+    image: postgres:16-alpine
+    container_name: smartbancs_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartbancs_net
+
+  # 2. Caché de Lectura (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: smartbancs_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - smartbancs_net
+
+  # 3. Bus de Mensajería para Desacoplamiento (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: smartbancs_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    ports:
+      - "5672:5672" # Puerto de comunicación para los microservicios
+      - "15672:15672" # Puerto de la Interfaz UI de administración
+    networks:
+      - smartbancs_net
+
+networks:
+  smartbancs_net:
+    driver: bridge

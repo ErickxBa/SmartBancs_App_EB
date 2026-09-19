@@ -1,0 +1,18 @@
+# Environments
+.env
+.venv
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Node / NestJS
+node_modules/
+dist/
+
+# OS Files
+.DS_Store
+Thumbs.db

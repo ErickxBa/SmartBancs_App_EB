@@ -73,8 +73,19 @@ async def main():
     logger.info("Conectado a PostgreSQL.")
     
     # 2. Connect to RabbitMQ
-    connection = await aio_pika.connect_robust(RABBITMQ_URL)
-    logger.info(f"Conectado a RabbitMQ en {RABBITMQ_URL.split('@')[-1]}")
+    connection = None
+    for attempt in range(10):
+        try:
+            connection = await aio_pika.connect_robust(RABBITMQ_URL)
+            logger.info(f"Conectado a RabbitMQ en {RABBITMQ_URL.split('@')[-1]}")
+            break
+        except Exception as e:
+            logger.warning(f"Error conectando a RabbitMQ (Intento {attempt+1}/10): {e}")
+            await asyncio.sleep(5)
+            
+    if not connection:
+        logger.error("No se pudo conectar a RabbitMQ después de varios intentos. Saliendo...")
+        return
     
     async with connection:
         channel = await connection.channel()
@@ -82,7 +93,7 @@ async def main():
         await channel.set_qos(prefetch_count=10)
         
         # Declare the exchange (must match NestJS)
-        exchange = await channel.declare_exchange("smartbancs", aio_pika.ExchangeType.TOPIC)
+        exchange = await channel.declare_exchange("smartbancs", aio_pika.ExchangeType.TOPIC, durable=True)
         
         # Declare the queue
         queue = await channel.declare_queue("ai_recommendations_queue", durable=True)

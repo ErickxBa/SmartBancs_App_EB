@@ -42,6 +42,11 @@ services:
     ports:
       - "5672:5672" # Puerto de comunicación para los microservicios
       - "15672:15672" # Puerto de la Interfaz UI de administración
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - smartbancs_net
 
@@ -64,7 +69,7 @@ services:
       redis:
         condition: service_started
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
     networks:
       - smartbancs_net
 
@@ -78,7 +83,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
     depends_on:
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       postgres:
         condition: service_healthy
     networks:

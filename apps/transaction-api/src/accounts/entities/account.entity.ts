@@ -6,7 +6,7 @@ export class Account {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ length: 200 })
+    @Column({ name: 'owner_name', length: 200 })
     ownerName: string;
 
     @Column({ type: 'numeric', precision: 15, scale: 2, default: 0 })

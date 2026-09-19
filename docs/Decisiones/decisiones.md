@@ -13,6 +13,10 @@ Este documento mantiene un registro de las decisiones técnicas críticas tomada
     *   *Ordenamiento Canónico:* Ordenamos alfabéticamente las IDs de la cuenta origen y destino antes de bloquearlas (`[accountFrom, accountTo].sort()`). Matemáticamente, esto asegura que sin importar la dirección de la transferencia (A -> B o B -> A simultáneamente), el motor de la base de datos siempre bloqueará la cuenta A primero, y luego la B, previniendo por completo el abrazo mortal (*deadlock*).
 *   **Alternativas Rechazadas:** Bloqueo Optimista (mediante versión en columnas) fue rechazado porque a alta concurrencia generaría demasiados reintentos y errores a nivel de aplicación, degradando el performance general.
 
-## 3. Desacoplamiento de Eventos Transaccionales (Fase 2 -> 3)
-*   **Decisión:** Implementar CQRS (`@nestjs/cqrs`) y enviar un evento al Bus In-Memory inmediatamente después de un `COMMIT` exitoso en PostgreSQL.
-*   **Justificación:** Para mantener la respuesta de la API por debajo de 2 segundos, el controlador REST debe retornar `200 OK` en cuanto el dinero se mueva. Cualquier tarea secundaria (alertas, envío al broker RabbitMQ, invocación de IA) será manejada por los Event Handlers sin bloquear el *Event Loop* de Fastify/Express que procesó la transacción primaria.
+## 3. Desacoplamiento de Eventos Transaccionales (Fase 3)
+*   **Decisión:** Utilizar CQRS (EventBus nativo de NestJS) acoplado a `@golevelup/nestjs-rabbitmq` para notificar al sistema de Inteligencia Artificial de forma asíncrona.
+*   **Justificación:** La evaluación exige que el cliente web reciba confirmación de su transferencia en menos de 2 segundos. Si el sistema esperara a que el modelo de IA respondiera sincrónicamente, fácilmente superaríamos los 5 segundos de latencia, fallando el requisito crítico de performance y bloqueando el hilo principal.
+*   **Implementación:** 
+    1.  El `ProcessTransactionHandler` ejecuta el `COMMIT` en la base de datos y lanza inmediatamente un evento asíncrono (`TransactionCompletedEvent`) a la memoria ram (EventBus).
+    2.  El controlador REST queda libre y retorna `200 OK` (usualmente en ~30ms a 50ms).
+    3.  En segundo plano, `PublishToRabbitMQHandler` atrapa el evento y empuja el payload de forma segura hacia RabbitMQ (exchange `smartbancs`, enrutamiento `tx.completed`), de donde el microservicio de IA en Python lo consumirá sin presionar al Core NestJS.

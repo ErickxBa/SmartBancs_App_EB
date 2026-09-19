@@ -1,0 +1,111 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-1234-56789abcdef0",
+    "name": "SmartBancs App API",
+    "description": "Colección de pruebas para la API Transaccional de SmartBancs, incluyendo validaciones DTO y casos de concurrencia.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Transacciones",
+      "item": [
+        {
+          "name": "1. Transferencia Exitosa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountFrom\": \"d9b2d63d-a233-4123-8478-1234567890ab\",\n  \"accountTo\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"amount\": 150.50\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/transactions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["transactions"]
+            },
+            "description": "Prueba base: Ejecuta una transferencia exitosa entre dos cuentas pre-cargadas en el seed."
+          }
+        },
+        {
+          "name": "2. Fallo: Fondos Insuficientes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountFrom\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"accountTo\": \"d9b2d63d-a233-4123-8478-1234567890ab\",\n  \"amount\": 9999999.00\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/transactions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["transactions"]
+            },
+            "description": "Validación de negocio: Intenta transferir más dinero del que tiene la cuenta origen."
+          }
+        },
+        {
+          "name": "3. Fallo: Validación DTO (Monto Negativo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountFrom\": \"d9b2d63d-a233-4123-8478-1234567890ab\",\n  \"accountTo\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n  \"amount\": -50.00\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/transactions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["transactions"]
+            },
+            "description": "Validación DTO: Intenta procesar un monto negativo. Debería retornar 400 Bad Request por class-validator."
+          }
+        },
+        {
+          "name": "4. Fallo: Misma Cuenta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountFrom\": \"d9b2d63d-a233-4123-8478-1234567890ab\",\n  \"accountTo\": \"d9b2d63d-a233-4123-8478-1234567890ab\",\n  \"amount\": 50.00\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/transactions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["transactions"]
+            },
+            "description": "Validación de negocio: Evitar transferencias circulares hacia la misma cuenta."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,14 +1,20 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler, EventBus } from '@nestjs/cqrs';
 import { ProcessTransactionCommand } from './process-transaction.command';
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Account } from '../../accounts/entities/account.entity';
 import { Transaction } from '../entities/transaction.entity';
+import { TransactionCompletedEvent } from '../events/transaction-completed.event';
 
 @Injectable()
 @CommandHandler(ProcessTransactionCommand)
 export class ProcessTransactionHandler implements ICommandHandler<ProcessTransactionCommand> {
-    constructor(private readonly dataSource: DataSource) {}
+    private readonly logger = new Logger(ProcessTransactionHandler.name);
+
+    constructor(
+        private readonly dataSource: DataSource,
+        private readonly eventBus: EventBus,
+    ) {}
 
     async execute(command: ProcessTransactionCommand): Promise<any> {
         const { accountFrom, accountTo, amount, traceId } = command.payload;
@@ -65,10 +71,17 @@ export class ProcessTransactionHandler implements ICommandHandler<ProcessTransac
             });
             await queryRunner.manager.save(Transaction, transaction);
 
-            // TODO Fase 3: Despachar Evento TransactionCompletedEvent aquí antes del commit final
-            // o inmediatamente después, dependiendo del diseño. Lo ideal es usar el Outbox o emitir después.
-
             await queryRunner.commitTransaction();
+
+            // Despachar evento asíncrono hacia el AI Worker (Fase 3)
+            this.eventBus.publish(new TransactionCompletedEvent(
+                transaction.id, 
+                accountFrom, 
+                amount, 
+                traceId
+            ));
+
+            this.logger.log(`transaction.completed trace=${traceId} tx=${transaction.id}`);
 
             return transaction;
         } catch (err) {

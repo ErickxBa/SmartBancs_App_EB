@@ -1,71 +1,96 @@
-# SmartBancs App - MVP
+# SmartBancs App - Reto Técnico de Arquitectura
 
-Este repositorio contiene la implementación del Producto Viable Mínimo (MVP) para "SmartBancs App", una plataforma diseñada para procesar transacciones en tiempo real con alta concurrencia y ofrecer recomendaciones financieras impulsadas por IA.
+Este repositorio contiene la implementación del Producto Viable Mínimo (MVP) para **SmartBancs App**, una plataforma diseñada para procesar transacciones en tiempo real con alta concurrencia, ofrecer recomendaciones financieras impulsadas por IA y presentar un panel de observabilidad integral.
 
-## Prerrequisitos
+---
 
-Para ejecutar este proyecto localmente, necesitas tener instalados:
+## 1. Arquitectura y Stack Tecnológico
 
-- [Docker](https://docs.docker.com/get-docker/) y [Docker Compose](https://docs.docker.com/compose/install/)
-- [Node.js](https://nodejs.org/) (v20 o superior) - Opcional, para desarrollo local.
-- [Python](https://www.python.org/) (3.11 o superior) - Opcional, para desarrollo local.
+El sistema ha sido diseñado priorizando **baja latencia**, **consistencia de datos** y **procesamiento asíncrono no bloqueante** bajo un enfoque de Arquitectura Orientada a Eventos y el patrón CQRS.
 
-## Configuración Inicial
+*   **API Transaccional (Backend):** Desarrollada en **NestJS (TypeScript)**. Expone endpoints RESTful, maneja la validación de DTOs y procesa las transferencias.
+*   **Base de Datos Relacional:** **PostgreSQL**. Se aplican bloqueos pesimistas (`SELECT FOR UPDATE`) y ordenamiento canónico de UUIDs para mitigar *Race Conditions* y *Deadlocks* bajo cargas de 10,000 TPS.
+*   **Caché de Lectura:** **Redis**. Diseñado para absorver la carga de lectura de saldos.
+*   **Bus de Mensajería:** **RabbitMQ**. Desacopla el flujo crítico transaccional de los procesos analíticos secundarios (IA).
+*   **Inteligencia Artificial (AI Worker):** Microservicio escrito en **Python**. Escucha asíncronamente eventos de RabbitMQ, consume modelos fundacionales (ej. Gemini) y actualiza métricas sin penalizar el flujo transaccional.
+*   **Observabilidad:** **Prometheus** (recolección de métricas) y **Grafana** (visualización y cuadros de mando).
+*   **Frontend (Dashboard):** Servido por **Nginx**. Una SPA en HTML/CSS/JS (Glassmorphism) que permite crear cuentas, transferir fondos, visualizar eventos en tiempo real y ejecutar pruebas de estrés.
 
-1. Clona este repositorio.
-2. Copia el archivo de ejemplo de variables de entorno y ajusta las credenciales si es necesario:
-   ```bash
-   cp .env.example .env
-   ```
-   *Nota: Asegúrate de tener configurada tu `GEMINI_API_KEY` en el archivo `.env` para que el servicio de IA funcione correctamente.*
+---
 
-## Ejecución del MVP
+## 2. Prerrequisitos
 
-El proyecto está dockerizado para asegurar una ejecución determinista. Puedes levantar toda la infraestructura (PostgreSQL, Redis, RabbitMQ, API en NestJS, Worker de IA en Python, Worker de Sincronización, y Prometheus/Grafana) con un solo comando en tu terminal:
+Para ejecutar este proyecto localmente, es indispensable contar con:
+*   [Docker](https://docs.docker.com/get-docker/) y [Docker Compose](https://docs.docker.com/compose/install/) instalados.
+*   Puertos libres en tu máquina: `8080` (Frontend), `3000` (API), `3001` (Grafana), `5432` (Postgres), `5672`/`15672` (RabbitMQ), `6379` (Redis), `9090` (Prometheus).
 
-```bash
-docker-compose up -d --build
-```
+---
 
-Esto levantará y orquestará los siguientes servicios:
-- **API Transaccional (NestJS):** http://localhost:3000
-- **Base de Datos (PostgreSQL):** Puerto 5432
-- **Caché (Redis):** Puerto 6379
-- **RabbitMQ (Mensajería Asíncrona):** Puertos 5672 (AMQP) y 15672 (Management UI)
-- **Grafana (Monitoreo):** http://localhost:3001
-- **Prometheus (Métricas):** http://localhost:9090
+## 3. Configuración y Despliegue (IaC)
 
-## Prueba de la Solución
+Toda la infraestructura está empaquetada como código para garantizar un despliegue predecible.
 
-Puedes probar el endpoint de transacciones enviando un `POST` a la API:
+1.  **Clona el repositorio** en tu entorno local.
+2.  **Configura las variables de entorno:**
+    ```bash
+    cp .env.example .env
+    ```
+    *(Asegúrate de configurar `GEMINI_API_KEY` dentro del archivo `.env` para consumir predicciones reales, caso contrario el Worker operará en modo Mock automático).*
+3.  **Levanta la plataforma:**
+    ```bash
+    docker-compose up -d --build
+    ```
+    Este comando inicializa simultáneamente los **10 contenedores** interconectados a través de la red `smartbancs_net`.
 
+---
+
+## 4. Uso y Demostración Práctica
+
+### A. Interfaz Gráfica (Recomendado)
+Dirígete a **[http://localhost:8080](http://localhost:8080)** para abrir el Dashboard.
+Desde aquí podrás:
+1.  **Registrar nuevas cuentas** dinámicamente.
+2.  **Ejecutar Transferencias** y observar en la tabla lateral cómo se integran las respuestas asíncronas de IA.
+3.  **Stress Test:** Presionar el botón "Simular Pico Transaccional" para enviar 50 peticiones concurrentes y auditar el comportamiento de la infraestructura.
+
+### B. Pruebas vía API (Alternativa)
+Si deseas utilizar Postman o cURL:
 ```bash
 curl -X POST http://localhost:3000/transactions \
 -H "Content-Type: application/json" \
 -d '{
-  "fromAccountId": 1,
-  "toAccountId": 2,
+  "accountFrom": "UUID_ORIGEN",
+  "accountTo": "UUID_DESTINO",
   "amount": 150.00
 }'
 ```
 
-Deberías recibir una respuesta `200 OK` inmediatamente (en menos de 2 segundos), mientras el Worker de IA procesará el análisis de la transacción en segundo plano y actualizará la base de datos de forma asíncrona.
+---
 
-## Monitoreo y Observabilidad
+## 5. Monitoreo, Observabilidad e Incidentes (Puntos 3.4 y 3.5)
 
-- Accede a **Grafana** en `http://localhost:3001` (Usuario: `admin`, Contraseña: la definida en tu `.env` o `admin` por defecto) para ver los dashboards de telemetría.
-- Accede a **RabbitMQ UI** en `http://localhost:15672` (Usuario: `admin`, Contraseña: `admin123`) para ver los eventos fluyendo en la cola `tx.completed`.
+El sistema genera trazabilidad end-to-end utilizando `TraceID` en todas las operaciones.
+*   **Grafana:** Accede a **[http://localhost:3001](http://localhost:3001)** (Credenciales: las definidas en `.env`, por defecto `admin`/`admin`). Podrás observar el panel con el volumen de TPS, latencias y contadores de negocio.
+*   **RabbitMQ UI:** Accede a **[http://localhost:15672](http://localhost:15672)** (Usuario: `admin` / `admin123`) para visualizar la cola `tx.completed`.
+*   **Simulación de Incidente:** El botón de **Stress Test** en el frontend emulará un cuello de botella, lo cual quedará inmediatamente evidenciado en los histogramas de Prometheus.
 
-## Detener la Solución
+---
 
-Para detener la ejecución de los contenedores y limpiar los volúmenes, ejecuta:
+## 6. Integración de Datos y ETL (Punto 3.2)
 
+El proyecto incluye un pipeline ETL escrito en Python ubicado en el directorio `/etl`.
+Este pipeline está diseñado para ingestar datos sucios desde el sistema core legado ("Bancs"):
+*   **Script:** `etl/bancs_transform.py`
+*   **Proceso:** Carga `bancs_raw_data.json`, utiliza *Pandas* para desduplicar, formatear fechas/montos, descartar nulos, e inyecta la información pulida en la base de datos PostgreSQL (`bancs_raw_transactions`) para su explotación analítica. Al ejecutarse de forma independiente, garantiza **cero interferencia** con el flujo transaccional OLTP de alta velocidad.
+
+---
+
+## 7. Limpieza del Entorno
+
+Para detener el ambiente y destruir los volúmenes, ejecuta:
 ```bash
 docker-compose down -v
 ```
 
-## Estructura del Documento Técnico
-El documento técnico requerido se divide modularmente dentro de la carpeta `docs/`. Te invitamos a leer:
-- `docs/Arquitectura/arquitectura.md`: Diseño de alto nivel, CQRS, Integración con Bancs y manejo de IA.
-- `docs/Decisiones/Decisiones.md`: Fundamentación del stack tecnológico.
-- `docs/Postmortem/postmortem.md`: Respuesta operativa al incidente simulado.
+---
+*Este proyecto fue estructurado y validado empleando asistencia de IA (Modelos Fundacionales para la generación de código y validación de arquitecturas de bases de datos bajo alta concurrencia), cumpliendo con lo estipulado en la declaración de uso del Reto Técnico.*

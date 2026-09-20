@@ -21,6 +21,7 @@ La solución se divide en cinco capas principales:
 3. **Capa de Inteligencia Artificial (Python):** Un *AI Worker* asíncrono que consume eventos para generar recomendaciones mediante un modelo de IA sin bloquear la API principal.
 4. **Capa de Persistencia Relacional:** Base de datos principal (PostgreSQL) para el almacenamiento definitivo de transacciones y saldos.
 5. **Capa de Sincronización y Core Legado:** Mecanismos de lectura/escritura hacia el sistema "Bancs" mediante patrones *Outbox* y scripts ETL, evitando su saturación.
+6. **Capa de Interfaz y Observabilidad:** Frontend en HTML/JS servido por Nginx (Dashboard Web) para ejecutar peticiones y auditar el sistema en conjunto con Grafana.
 
 ---
 
@@ -89,6 +90,10 @@ smartbancs-nestjs/
 ├── etl/
 │   ├── bancs_raw_data.json        # DATOS SUCIOS: Tu archivo con nulos y errores
 │   └── bancs_transform.py         # Script ETL (Python/Pandas) para lectura de Bancs
+├── frontend/                      # SPA (Dashboard) para pruebas E2E y Stress Tests
+│   ├── index.html                 
+│   ├── styles.css
+│   └── app.js
 ├── db/
 │   ├── schema.sql                 # Esquema de base de datos
 │   └── seed.sql                   # Datos semilla

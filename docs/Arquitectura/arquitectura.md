@@ -88,7 +88,7 @@ smartbancs-nestjs/
 │       ├── Dockerfile
 │       └── ai_client.py
 ├── etl/
-│   ├── bancs_raw_data.json        # DATOS SUCIOS: Tu archivo con nulos y errores
+│   ├── bancs_raw_data.json        # Archivo con nulos y errores
 │   └── bancs_transform.py         # Script ETL (Python/Pandas) para lectura de Bancs
 ├── frontend/                      # SPA (Dashboard) para pruebas E2E y Stress Tests
 │   ├── index.html                 
@@ -98,7 +98,8 @@ smartbancs-nestjs/
 │   ├── schema.sql                 # Esquema de base de datos
 │   └── seed.sql                   # Datos semilla
 ├── infra/
-│   └── prometheus/                # Configuración de métricas
+│   ├── grafana/                   # Configuración de grafana
+│   ├── prometheus/                # Configuración de métricas
 └── docs/
     ├── arquitectura.md            
     ├── decisiones.md

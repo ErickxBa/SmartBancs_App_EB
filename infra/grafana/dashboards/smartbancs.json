@@ -300,7 +300,7 @@
           "refId": "A"
         }
       ],
-      "title": "Server Requests (Stacked)",
+      "title": "Server Requests",
       "type": "timeseries"
     },
     {
@@ -568,7 +568,7 @@
           "refId": "A"
         }
       ],
-      "title": "Transactions Per Second (Bar Chart)",
+      "title": "Transactions Per Second",
       "type": "timeseries"
     },
     {
@@ -632,7 +632,7 @@
           "refId": "A"
         }
       ],
-      "title": "Transacciones en Vivo (Conexión Directa PostgreSQL)",
+      "title": "Transacciones en Vivo",
       "type": "table"
     }
   ],

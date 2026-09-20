@@ -67,7 +67,7 @@ curl -X POST http://localhost:3000/transactions \
 
 ---
 
-## 5. Monitoreo, Observabilidad e Incidentes (Puntos 3.4 y 3.5)
+## 5. Monitoreo, Observabilidad e Incidentes
 
 El sistema genera trazabilidad end-to-end utilizando `TraceID` en todas las operaciones.
 *   **Grafana:** Accede a **[http://localhost:3001](http://localhost:3001)** (Credenciales: las definidas en `.env`, por defecto `admin`/`admin`). Podrás observar el panel con el volumen de TPS, latencias y contadores de negocio.
@@ -76,7 +76,7 @@ El sistema genera trazabilidad end-to-end utilizando `TraceID` en todas las oper
 
 ---
 
-## 6. Integración de Datos y ETL (Punto 3.2)
+## 6. Integración de Datos y ETL
 
 El proyecto incluye un pipeline ETL escrito en Python ubicado en el directorio `/etl`.
 Este pipeline está diseñado para ingestar datos sucios desde el sistema core legado ("Bancs"):
@@ -93,4 +93,3 @@ docker-compose down -v
 ```
 
 ---
-*Este proyecto fue estructurado y validado empleando asistencia de IA (Modelos Fundacionales para la generación de código y validación de arquitecturas de bases de datos bajo alta concurrencia), cumpliendo con lo estipulado en la declaración de uso del Reto Técnico.*

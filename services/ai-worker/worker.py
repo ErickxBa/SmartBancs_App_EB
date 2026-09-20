@@ -3,7 +3,7 @@ import os
 import json
 import logging
 import aio_pika
-import asyncpg
+import asyncpg  # type: ignore
 from ai_client import analyze_transaction
 
 # Configure logging

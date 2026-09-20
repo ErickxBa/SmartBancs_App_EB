@@ -1,0 +1,42 @@
+groups:
+- name: smartbancs_alerts
+  rules:
+  # 1. Alerta de Advertencia (Warning): Latencia p99 > 1.5s
+  - alert: HighLatencyWarning
+    expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 1.5
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Latencia alta detectada (p99 > 1.5s)"
+      description: "El 1% de las transacciones está tomando más de 1.5 segundos. Revisar base de datos."
+
+  # 2. Alerta Crítica (Critical): Latencia p99 > 2.0s
+  - alert: HighLatencyCritical
+    expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 2.0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Latencia CRÍTICA (p99 > 2s)"
+      description: "Se ha roto el SLA del negocio. Las transacciones tardan más de 2s."
+
+  # 3. Notificación a PagerDuty: Error Rate > 1%
+  - alert: HighErrorRate
+    expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01
+    for: 1m
+    labels:
+      severity: pagerduty
+    annotations:
+      summary: "Tasa de errores por encima del 1%"
+      description: "El API está fallando en más del 1% de los casos. Escalando al equipo SRE de guardia."
+
+  # 4. Autoescalado por Cola: RabbitMQ > 10K mensajes
+  - alert: QueueTooLarge
+    expr: rabbitmq_queue_messages{queue="ai_recommendations_queue"} > 10000
+    for: 2m
+    labels:
+      severity: scaling_trigger
+    annotations:
+      summary: "Cola de IA saturada (> 10K mensajes)"
+      description: "Trigger para iniciar Auto-Scaling (HPA) y levantar más workers de IA en Python."

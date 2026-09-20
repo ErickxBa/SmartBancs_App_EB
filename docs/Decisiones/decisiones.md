@@ -20,3 +20,10 @@ Este documento mantiene un registro de las decisiones técnicas críticas tomada
     1.  El `ProcessTransactionHandler` ejecuta el `COMMIT` en la base de datos y lanza inmediatamente un evento asíncrono (`TransactionCompletedEvent`) a la memoria ram (EventBus).
     2.  El controlador REST queda libre y retorna `200 OK` (usualmente en ~30ms a 50ms).
     3.  En segundo plano, `PublishToRabbitMQHandler` atrapa el evento y empuja el payload de forma segura hacia RabbitMQ (exchange `smartbancs`, enrutamiento `tx.completed`), de donde el microservicio de IA en Python lo consumirá sin presionar al Core NestJS.
+
+## 4. Decisiones de Alcance Funcional para el MVP (Seguridad e Idempotencia)
+*   **Decisión:** Mantener las rutas de la API temporalmente abiertas (sin Autenticación JWT ni API Keys) y aplazar la exigencia de una llave de idempotencia estricta en el encabezado de las peticiones POST.
+*   **Justificación:** El objetivo principal del Reto Técnico y de este MVP se centró en demostrar la viabilidad y resolución de problemas bajo **alta concurrencia** y **baja latencia** en el motor transaccional, junto a la integración con el ecosistema de Observabilidad y Machine Learning.
+*   **Evolución hacia Producción (Roadmap):** 
+    *   *Seguridad:* En un entorno productivo, la Autenticación y Autorización no se manejarían dentro del monolito transaccional para no comprometer el SLA de <2s. Se implementaría un **API Gateway** perimetral (p. ej., Kong o AWS API Gateway) para verificar tokens JWT y proteger los endpoints antes de que toquen el contenedor de NestJS.
+    *   *Idempotencia:* Se incorporará una validación de `Idempotency-Key` en el Header del cliente (almacenada eficientemente en **Redis**) para prevenir pagos duplicados accidentales en caso de que un cliente móvil sufra de una desconexión y realice reintentos automatizados. Estas capas añadirían un nivel de madurez absoluto a la plataforma probada en este MVP.

@@ -10,9 +10,25 @@ from prometheus_client import start_http_server, Counter
 # Define Metrics
 AI_REQUESTS_TOTAL = Counter('smartbancs_ai_requests_total', 'Total AI recommendations generated', ['status'])
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Configure JSON logging
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "timestamp": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "logger": record.name
+        }
+        if record.exc_info:
+            log_record['exc_info'] = self.formatException(record.exc_info)
+        return json.dumps(log_record)
+
 logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setFormatter(JSONFormatter())
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+logger.propagate = False
 
 # Environment Variables
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://admin:admin123@localhost:5672/")

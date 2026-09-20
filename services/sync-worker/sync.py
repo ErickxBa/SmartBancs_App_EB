@@ -3,8 +3,26 @@ import time
 import logging
 from sqlalchemy import create_engine, text
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+import json
+
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "timestamp": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "logger": record.name
+        }
+        if record.exc_info:
+            log_record['exc_info'] = self.formatException(record.exc_info)
+        return json.dumps(log_record)
+
 logger = logging.getLogger("SyncWorker")
+handler = logging.StreamHandler()
+handler.setFormatter(JSONFormatter())
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+logger.propagate = False
 
 def main():
     db_url = os.getenv("DATABASE_URL", "postgresql://app_user:app_password@postgres:5432/smartbancs")

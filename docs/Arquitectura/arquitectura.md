@@ -35,7 +35,7 @@ Para cumplir con el SLA de < 2 segundos por transferencia, el flujo crítico se 
 2. **Control de Concurrencia:** NestJS inicia una transacción SQL hacia PostgreSQL. Para evitar *race conditions* y asegurar la integridad a 10,000 TPS, utiliza un `SELECT FOR UPDATE` (bloqueo pesimista en orden canónico).
 3. **Ejecución y Caché:** Tras validar el saldo, se realizan los `UPDATE` e `INSERT` necesarios y se consolida la transacción (`COMMIT`). Inmediatamente, se actualizan los saldos en Redis usando la estrategia *Write-through*.
 4. **Respuesta Inmediata:** Se emite un `TransactionCompletedEvent` a RabbitMQ y se retorna un código `200 OK` al cliente de inmediato (cumpliendo la restricción de tiempo).
-5. **Recomendación IA (Asíncrona):** El Worker IA en Python consume el evento desde RabbitMQ, extrae los datos, solicita la recomendación al Modelo IA (ej. OpenAI), y guarda el resultado en PostgreSQL de manera transparente para el usuario.
+5. **Recomendación IA (Asíncrona):** El Worker IA en Python consume el evento desde RabbitMQ, extrae los datos, solicita la recomendación al Modelo IA (Gemini), y guarda el resultado en PostgreSQL de manera transparente para el usuario.
 
 ---
 
@@ -59,7 +59,7 @@ Se utiliza un **Sync Worker / Patrón Outbox** que lee transacciones pendientes 
 La selección tecnológica responde a los desafíos de alta concurrencia, procesamiento asíncrono y la necesidad de integración híbrida.
 
 ### Stack Principal
-- **Backend Core:** NestJS (TypeScript) con Fastify (optimizado para alto rendimiento).
+- **Backend Core:** NestJS (TypeScript) sobre plataforma Express.
 - **Mensajería:** RabbitMQ (para desacoplamiento de tareas asíncronas).
 - **Bases de Datos:** PostgreSQL (Relacional principal) y Redis (Caché en memoria).
 - **Procesamiento e IA:** Python (para el Worker IA y los scripts ETL con Pandas).
@@ -75,7 +75,7 @@ smartbancs-nestjs/
 ├── .env.example                   # Añade aquí tus variables GEMINI_API_KEY y DB_URL
 ├── AI_USAGE.md
 ├── apps/
-│   └── transaction-api/           # Microservicio principal NestJS (Fastify)
+│   └── transaction-api/           # Microservicio principal NestJS
 │       ├── src/
 │       │   ├── transactions/      # Dominio principal (CQRS, Comandos, Eventos, DTOs)
 │       │   ├── accounts/          # Dominio de cuentas de usuario

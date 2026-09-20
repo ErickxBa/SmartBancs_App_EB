@@ -40,7 +40,7 @@ Toda la infraestructura está empaquetada como código para garantizar un despli
     ```bash
     docker-compose up -d --build
     ```
-    Este comando inicializa simultáneamente los **10 contenedores** interconectados a través de la red `smartbancs_net`.
+    Este comando inicializa simultáneamente los **9 contenedores** interconectados a través de la red `smartbancs_net`.
 
 ---
 

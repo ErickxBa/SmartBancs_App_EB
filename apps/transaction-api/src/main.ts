@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { JsonLoggerService } from './observability/json-logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new JsonLoggerService(),
+  });
   
   // Enable global validation for DTOs
   app.useGlobalPipes(new ValidationPipe({
@@ -16,6 +19,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`Transaction API running on: http://localhost:${port}`);
+  const logger = new JsonLoggerService();
+  logger.log(`Transaction API running on: http://localhost:${port}`, 'Bootstrap');
 }
 bootstrap();

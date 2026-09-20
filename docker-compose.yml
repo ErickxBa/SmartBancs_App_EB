@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # 1. Motor de Persistencia Relacional (Transaccional)
   postgres:
@@ -106,6 +104,7 @@ services:
     container_name: smartbancs_prometheus
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infra/prometheus/alerts.yml:/etc/prometheus/alerts.yml
     ports:
       - "9090:9090"
     networks:

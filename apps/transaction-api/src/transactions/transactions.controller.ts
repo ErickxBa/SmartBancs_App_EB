@@ -1,12 +1,27 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { ProcessTransactionCommand } from './commands/process-transaction.command';
+import { Transaction } from './entities/transaction.entity';
 import { v4 as uuidv4 } from 'uuid';
 
 @Controller('transactions')
 export class TransactionsController {
-    constructor(private readonly commandBus: CommandBus) {}
+    constructor(
+        private readonly commandBus: CommandBus,
+        @InjectRepository(Transaction)
+        private readonly transactionRepo: Repository<Transaction>
+    ) {}
+
+    @Get()
+    async getRecentTransactions() {
+        return await this.transactionRepo.find({
+            order: { createdAt: 'DESC' },
+            take: 20
+        });
+    }
 
     @Post()
     @HttpCode(HttpStatus.OK)

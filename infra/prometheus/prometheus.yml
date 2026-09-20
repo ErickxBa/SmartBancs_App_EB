@@ -4,4 +4,7 @@ global:
 scrape_configs:
   - job_name: 'transaction-api'
     static_configs:
-      - targets: ['host.docker.internal:3000']
+      - targets: ['transaction-api:3000']
+  - job_name: 'ai-worker'
+    static_configs:
+      - targets: ['ai-worker:8000']

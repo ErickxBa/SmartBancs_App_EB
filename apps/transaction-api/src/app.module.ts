@@ -27,6 +27,8 @@ import { ObservabilityModule } from './observability/observability.module';
             url: process.env.DATABASE_URL || 'postgres://app_user:app_password@localhost:5432/smartbancs',
             autoLoadEntities: true,
             synchronize: false, // Prod: El esquema se controla init.sql    
+            logging: ['query', 'error', 'schema', 'warn'],
+            maxQueryExecutionTime: 500,
         }),
         AccountsModule,
         TransactionsModule,

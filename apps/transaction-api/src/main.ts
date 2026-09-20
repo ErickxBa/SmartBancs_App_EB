@@ -11,6 +11,9 @@ async function bootstrap() {
     transform: true,
   }));
 
+  // Enable CORS for Frontend UI
+  app.enableCors();
+
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`Transaction API running on: http://localhost:${port}`);

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartBancs – Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Font Awesome CDN for elegant icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+
+<body>
+    <header class="glass-header">
+        <h1><i class="fas fa-university"></i> SmartBancs</h1>
+        <a href="http://localhost:3001" target="_blank" class="btn-glow"
+            style="text-decoration: none; padding: 10px 20px; width: auto; margin-top: 0; font-size: 0.9rem;">
+            <i class="fas fa-chart-line"></i> Abrir Grafana (Observabilidad)
+        </a>
+    </header>
+    <main class="dashboard-grid">
+        <!-- Panel Izquierdo: Cuentas -->
+        <section class="glass-panel">
+            <h2><i class="fas fa-user-plus"></i> Nueva Cuenta</h2>
+            <form id="createAccountForm" class="cyber-form">
+                <div class="form-group">
+                    <label>Nombre del Propietario</label>
+                    <input type="text" id="ownerName" placeholder="Ej. Juan Pérez" required>
+                </div>
+                <div class="form-group">
+                    <label>Depósito Inicial (USD)</label>
+                    <input type="number" id="initialBalance" min="0" step="0.01" placeholder="Ej. 1000.00" required>
+                </div>
+                <button type="submit" class="btn-primary" id="btnCreateAccount"><i class="fas fa-check"></i> Registrar
+                    Cuenta</button>
+            </form>
+
+            <div class="section-divider"></div>
+
+            <h2><i class="fas fa-users"></i> Cuentas Activas</h2>
+            <div class="table-container">
+                <table class="cyber-table">
+                    <thead>
+                        <tr>
+                            <th>UUID</th>
+                            <th>Saldo (USD)</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsTableBody">
+                        <!-- Llenado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Panel Central: Transferencias -->
+        <section class="glass-panel highlight-panel">
+            <h2><i class="fas fa-exchange-alt"></i> Ejecutar Transferencia</h2>
+            <p class="subtitle">Dispara un evento transaccional CQRS en tiempo real.</p>
+
+            <form id="transferForm" class="cyber-form mt-4">
+                <div class="form-group">
+                    <label>Cuenta Origen (UUID)</label>
+                    <input type="text" id="accountFrom" placeholder="00000000-0000-0000-0000-000000000000" required>
+                </div>
+                <div class="form-group">
+                    <label>Cuenta Destino (UUID)</label>
+                    <input type="text" id="accountTo" placeholder="00000000-0000-0000-0000-000000000000" required>
+                </div>
+                <div class="form-group">
+                    <label>Monto a Transferir (USD)</label>
+                    <input type="number" id="transferAmount" min="0.01" step="0.01" placeholder="150.00" required>
+                </div>
+                <button type="submit" class="btn-glow" id="btnTransfer"><i class="fas fa-paper-plane"></i> Procesar
+                    Transferencia</button>
+            </form>
+
+            <div class="section-divider"></div>
+
+            <div style="text-align: center;">
+                <p class="subtitle" style="color: var(--danger); font-weight: bold;"><i
+                        class="fas fa-exclamation-triangle"></i> Operaciones Críticas</p>
+                <button type="button" class="btn-primary" style="background: var(--danger);" id="btnStress"
+                    onclick="runStressTest()"><i class="fas fa-bolt"></i> Simular Pico Transaccional (Stress
+                    Test)</button>
+            </div>
+        </section>
+
+        <!-- Panel Derecho: Log Transaccional -->
+        <section class="glass-panel">
+            <h2><i class="fas fa-search"></i> Últimas Transacciones</h2>
+            <div class="table-container log-container">
+                <table class="cyber-table small-text">
+                    <thead>
+                        <tr>
+                            <th>Trace ID</th>
+                            <th>Estado</th>
+                            <th>Monto</th>
+                            <th>IA Rec.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody">
+                        <!-- Llenado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Bienvenida sugerido -->
+    <div id="welcome-modal" class="modal-overlay">
+        <div class="glass-panel modal-content">
+            <h2><i class="fas fa-eye" style="color: var(--primary);"></i> Panel de Observabilidad</h2>
+            <p>Te sugerimos fuertemente abrir el dashboard de Grafana en una pestaña paralela para monitorear el
+                desempeño del sistema y la IA en tiempo real durante esta prueba.</p>
+            <a href="http://localhost:3001" target="_blank" class="btn-primary"
+                style="text-decoration: none; display: inline-block; margin-bottom: 15px; width: 100%;">
+                <i class="fas fa-chart-line"></i> Abrir Grafana ahora
+            </a>
+            <button class="btn-glow" onclick="closeModal()">Continuar</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

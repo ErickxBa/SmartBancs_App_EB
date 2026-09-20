@@ -5,6 +5,10 @@ import logging
 import aio_pika
 import asyncpg  # type: ignore
 from ai_client import analyze_transaction
+from prometheus_client import start_http_server, Counter
+
+# Define Metrics
+AI_REQUESTS_TOTAL = Counter('smartbancs_ai_requests_total', 'Total AI recommendations generated', ['status'])
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -59,14 +63,22 @@ async def process_message(message: aio_pika.IncomingMessage, pool: asyncpg.Pool)
             # Ack the message explicitly (though `async with message.process()` does it automatically if no exception)
             await message.ack()
             
+            # Increment Prometheus counter
+            AI_REQUESTS_TOTAL.labels(status='success').inc()
+            
         except Exception as e:
             logger.error(f"Error procesando mensaje: {e}")
+            AI_REQUESTS_TOTAL.labels(status='error').inc()
             # Reject the message and do not requeue it if it's a poison pill (to avoid infinite loops)
             # In a real system, you might route it to a Dead Letter Queue (DLQ).
             await message.reject(requeue=False)
 
 async def main():
     logger.info("Iniciando AI Worker...")
+    
+    # Start Prometheus Metrics Server
+    start_http_server(8000)
+    logger.info("Servidor de métricas (Prometheus) iniciado en el puerto 8000")
     
     # 1. Connect to PostgreSQL
     pool = await asyncpg.create_pool(DATABASE_URL)

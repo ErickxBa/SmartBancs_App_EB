@@ -1,5 +1,6 @@
 import os
 import asyncio
+import random
 import google.generativeai as genai
 import logging
 
@@ -22,7 +23,13 @@ async def analyze_transaction(amount: float) -> str:
     try:
         if not os.getenv("GEMINI_API_KEY"):
             logger.warning("GEMINI_API_KEY no encontrada. Generando recomendación mockeada.")
-            return f"[Mock] Sugerencia: El monto de {amount} indica un gasto normal."
+            mocks = [
+                f"[Mock IA] Recomendación: Dado tu gasto de {amount} USD, sugerimos destinar el 10% a tu fondo de emergencia.",
+                f"[Mock IA] Recomendación: Tu transferencia de {amount} USD fue procesada en tiempo real. Considera automatizar tus inversiones.",
+                f"[Mock IA] Alerta SmartBancs: Evita gastos hormiga. Esta transferencia de {amount} USD equivale al 5% de tu liquidez mensual recomendada.",
+                f"[Mock IA] Tip Financiero: Diversificar es clave. Has movido {amount} USD; revisa nuestro portafolio de fondos mutuos hoy mismo."
+            ]
+            return random.choice(mocks)
 
         prompt = f"""Eres la Inteligencia Artificial integrada en "SmartBancs App", una moderna plataforma financiera.
         El usuario acaba de completar una transferencia en tiempo real por un monto de {amount} USD.

@@ -93,3 +93,9 @@ docker-compose down -v
 ```
 
 ---
+
+## 8. Video Explicativo
+
+A continuación, puedes encontrar el video donde se explica en detalle la arquitectura y el funcionamiento de SmartBancs App:
+
+🎥 **[Ver Video Explicativo en Google Drive](https://drive.google.com/file/d/1J4zt0PtihzM2ClzJFwZRu-jbA2yzaa3-/view?usp=sharing)**
